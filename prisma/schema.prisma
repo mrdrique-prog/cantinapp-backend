@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                Int       @id @default(autoincrement())
+  nome              String
+  email             String    @unique
+  senha             String
+  perfil            Perfil    @default(OPERADOR)
+  ativo             Boolean   @default(true)
+  resetToken        String?
+  resetTokenExpira  DateTime?
+  criadoEm          DateTime  @default(now())
+
+  vendas    Venda[]
+  logs      Log[]
+}
+
+enum Perfil {
+  ADMIN
+  OPERADOR
+  CONSULTA
+}
+
+model Pessoa {
+  id          Int         @id @default(autoincrement())
+  nome        String
+  telefone    String?
+  observacoes String?
+  ativo       Boolean     @default(true)
+  criadoEm    DateTime    @default(now())
+
+  vendas      Venda[]
+  pagamentos  Pagamento[]
+  cobranças   Cobranca[]
+}
+
+model Produto {
+  id           Int           @id @default(autoincrement())
+  nome         String
+  categoria    String        @default("Geral")
+  ativo        Boolean       @default(true)
+  criadoEm     DateTime      @default(now())
+
+  cantinaItens CantinaItem[]
+  vendaItens   VendaItem[]
+}
+
+model Domingo {
+  id               Int           @id @default(autoincrement())
+  data             String
+  descricao        String?
+  custoTotal       Float?
+  receitaEsperada  Float?
+  criadoEm         DateTime      @default(now())
+
+  cantinaItens CantinaItem[]
+  vendas       Venda[]
+}
+
+model CantinaItem {
+  id         Int     @id @default(autoincrement())
+  domingoId  Int
+  produtoId  Int
+  preco      Float
+  quantidade Float?
+
+  domingo    Domingo @relation(fields: [domingoId], references: [id])
+  produto    Produto @relation(fields: [produtoId], references: [id])
+
+  @@unique([domingoId, produtoId])
+}
+
+model Venda {
+  id         Int       @id @default(autoincrement())
+  pessoaId   Int
+  domingoId  Int
+  usuarioId  Int?
+  data       String
+  hora       String
+  modalVenda String    @default("fiado")
+  cancelada  Boolean   @default(false)
+  editadoPor Int?
+  editadoEm  DateTime?
+  criadoEm   DateTime  @default(now())
+
+  pessoa     Pessoa      @relation(fields: [pessoaId], references: [id])
+  domingo    Domingo     @relation(fields: [domingoId], references: [id])
+  usuario    Usuario?    @relation(fields: [usuarioId], references: [id])
+  itens      VendaItem[]
+}
+
+model VendaItem {
+  id         Int     @id @default(autoincrement())
+  vendaId    Int
+  produtoId  Int
+  quantidade Int
+  precoUnit  Float
+
+  venda      Venda   @relation(fields: [vendaId], references: [id])
+  produto    Produto @relation(fields: [produtoId], references: [id])
+}
+
+model Pagamento {
+  id         Int      @id @default(autoincrement())
+  pessoaId   Int
+  valor      Float
+  forma      String   @default("PIX")
+  observacao String?
+  data       String
+  criadoEm   DateTime @default(now())
+
+  pessoa     Pessoa   @relation(fields: [pessoaId], references: [id])
+}
+
+model Cobranca {
+  id        Int      @id @default(autoincrement())
+  pessoaId  Int
+  mesRef    String
+  valor     Float
+  dataEnvio String
+  status    String   @default("enviada")
+
+  pessoa    Pessoa   @relation(fields: [pessoaId], references: [id])
+}
+
+model Log {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int?
+  acao       String
+  tabela     String
+  registroId Int?
+  detalhe    String?
+  criadoEm   DateTime @default(now())
+
+  usuario    Usuario? @relation(fields: [usuarioId], references: [id])
+}
