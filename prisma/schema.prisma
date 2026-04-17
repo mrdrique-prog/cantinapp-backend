@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Usuario {
-  id                Int       @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())h
   nome              String
   email             String    @unique
   senha             String
@@ -38,7 +38,7 @@ model Pessoa {
 
   vendas      Venda[]
   pagamentos  Pagamento[]
-  cobranças   Cobranca[]
+  cobracas   Cobranca[]
 }
 
 model Produto {
