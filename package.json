@@ -1,4 +1,4 @@
-{
+
   "name": "cantinapp-backend",
   "version": "1.0.0",
   "description": "CantinApp Backend - API REST",
@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
-    "bcryptjs": "^2.4.3", "date-fns"
-    
+    "bcryptjs": "^2.4.3", 
+    "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.26.2",
     "@fastify/cors": "^9.0.1",
