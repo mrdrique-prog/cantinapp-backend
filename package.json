@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^2.4.3", "date-fns"
+    
     "dotenv": "^16.4.5",
     "fastify": "^4.26.2",
     "@fastify/cors": "^9.0.1",
