@@ -7,10 +7,12 @@ import { getConfig } from './Configuracoes'
 
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api'
 function getToken() { return localStorage.getItem('cantinapp_token') }
+
 async function apiGet(path) {
   const res = await fetch(API + path, { headers: { 'Authorization': `Bearer ${getToken()}` } })
   return res.json()
 }
+
 async function apiPost(path, body) {
   const res = await fetch(API + path, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
@@ -18,6 +20,7 @@ async function apiPost(path, body) {
   })
   return res.json()
 }
+
 async function apiDelete(path) {
   const res = await fetch(API + path, {
     method: 'DELETE', headers: { 'Authorization': `Bearer ${getToken()}` }
@@ -32,7 +35,9 @@ export function Contas() {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    apiGet('/relatorios/devedores').then(data => { setDevedores(Array.isArray(data) ? data : []); setCarregando(false) })
+    apiGet('/relatorios/devedores')
+      .then(data => { setDevedores(Array.isArray(data) ? data : []); setCarregando(false) })
+      .catch(() => setCarregando(false))
   }, [])
 
   const filtrados = devedores.filter(p => p.nome.toLowerCase().includes(busca.toLowerCase()))
@@ -51,17 +56,14 @@ export function Contas() {
           <input value={busca} onChange={e => setBusca(e.target.value)}
             placeholder="Buscar pessoa..." style={{ border: 'none', outline: 'none', flex: 1, fontSize: '14px', fontFamily: 'inherit', background: 'transparent' }} />
         </div>
-
         {carregando && <div style={{ textAlign: 'center', padding: '20px', color: '#9E9E9E' }}>Carregando...</div>}
         <SectionTitle>{filtrados.length} devedor{filtrados.length !== 1 ? 'es' : ''}</SectionTitle>
-
         {!carregando && filtrados.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#9E9E9E' }}>
             <div style={{ fontSize: '40px', marginBottom: '8px' }}>✅</div>
             <div style={{ fontSize: '16px', fontWeight: 500 }}>Nenhum devedor!</div>
           </div>
         )}
-
         <div style={{ background: 'white', borderRadius: '12px', padding: '0 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           {filtrados.map((p, idx) => (
             <div key={p.id}>
@@ -92,10 +94,21 @@ export function ContaDetalhe() {
   const [itemParaApagar, setItemParaApagar] = useState(null)
 
   const carregar = async () => {
-    const [p, ext] = await Promise.all([apiGet(`/pessoas/${pessoaId}`), apiGet(`/pessoas/${pessoaId}/extrato`)])
-    setPessoa(p); setSaldo(p.saldo || 0)
-    setExtrato(Array.isArray(ext) ? ext : [])
-    setCarregando(false)
+    setCarregando(true)
+    try {
+      const [p, ext] = await Promise.all([
+        apiGet(`/pessoas/${pessoaId}`),
+        apiGet(`/pessoas/${pessoaId}/extrato`)
+      ])
+      setPessoa(p)
+      setSaldo(p.saldo || 0)
+      setExtrato(Array.isArray(ext) ? ext : [])
+    } catch (e) {
+      console.error('Erro ao carregar:', e)
+      mostrarToast('Erro ao carregar extrato', 'erro')
+    } finally {
+      setCarregando(false)
+    }
   }
 
   useEffect(() => { carregar() }, [pessoaId])
@@ -136,16 +149,13 @@ export function ContaDetalhe() {
             <div style={{ fontSize: '22px', fontWeight: 700, color: saldo > 0 ? '#D32F2F' : '#2E7D32' }}>{formatMoeda(saldo)}</div>
           </div>
         </div>
-
         {saldo > 0 && (
           <BtnPrimario onClick={() => ir('pagamento', { pessoaId, saldo })} style={{ marginBottom: '16px' }}>
             Registrar Pagamento
           </BtnPrimario>
         )}
-
         <SectionTitle>Extrato ({extrato.length} lancamentos)</SectionTitle>
         {carregando && <div style={{ textAlign: 'center', padding: '20px', color: '#9E9E9E' }}>Carregando...</div>}
-
         <div style={{ background: 'white', borderRadius: '12px', padding: '0 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           {extrato.length === 0 && !carregando && (
             <div style={{ padding: '24px 0', textAlign: 'center', color: '#9E9E9E', fontSize: '14px' }}>Nenhum lancamento</div>
@@ -245,7 +255,6 @@ export function Pagamento() {
             </div>
           </div>
         </div>
-
         <SectionTitle>Valor recebido</SectionTitle>
         <div style={{ position: 'relative', marginBottom: '10px' }}>
           <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9E9E9E', fontSize: '16px' }}>R$</span>
@@ -261,7 +270,6 @@ export function Pagamento() {
             }}>{formatMoeda(v)}</button>
           ))}
         </div>
-
         <SectionTitle>Forma de pagamento</SectionTitle>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
           {formas.map(f => (
@@ -272,11 +280,10 @@ export function Pagamento() {
             }}>{f}</button>
           ))}
         </div>
-
         <SectionTitle>Recebido por</SectionTitle>
         {adms.length === 0 ? (
           <div style={{ background: '#FFF8E1', border: '1px solid #FBC02D', borderRadius: '10px', padding: '10px 14px', fontSize: '13px', color: '#F57F17', marginBottom: '16px' }}>
-            Nenhum ADM cadastrado. Va em Configuracoes > ADM para cadastrar.
+            Nenhum ADM cadastrado. Va em Configuracoes &gt; ADM para cadastrar.
           </div>
         ) : (
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -289,11 +296,9 @@ export function Pagamento() {
             ))}
           </div>
         )}
-
         <textarea value={obs} onChange={e => setObs(e.target.value)}
           placeholder="Observacao (opcional)" rows={2}
           style={{ width: '100%', padding: '12px 14px', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: '10px', fontSize: '14px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none', marginBottom: '16px' }} />
-
         <BtnPrimario onClick={handleSalvar} disabled={salvando || !valor || !recebidoPor}>
           {salvando ? 'Registrando...' : 'Confirmar Pagamento'}
         </BtnPrimario>
